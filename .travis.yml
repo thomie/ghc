@@ -5,7 +5,6 @@ git:
   submodules: false
 
 env:
- - DEBUG_STAGE2=YES
  - DEBUG_STAGE2=NO
 
 addons:
