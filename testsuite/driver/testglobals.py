@@ -210,8 +210,8 @@ class TestOptions:
        # should we clean up after ourselves?
        self.cleanup = ''
 
-       # extra files to clean afterward
-       self.clean_files = []
+       # extra files to copy to the testdir
+       self.extra_files = []
 
        # which -t numeric fields do we want to look at, and what bounds must
        # they fall within?

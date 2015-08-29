@@ -9,6 +9,8 @@ import os
 import string
 import getopt
 import platform
+import shutil
+import tempfile
 import time
 import re
 
@@ -270,10 +272,15 @@ else:
     # set stdout to unbuffered (is this the best way to do it?)
     sys.stdout = os.fdopen(sys.__stdout__.fileno(), "w", 0)
 
+# Make it easy to delete all test files with 'rm -rf /tmp/ghc_test'.
+ghc_testdir = tempfile.gettempdir() + '/ghc_test'
+mkdirp(ghc_testdir)
+tempdir = normalise_slashes_(tempfile.mkdtemp('', '', dir=ghc_testdir))
+
 # First collect all the tests to be run
 for file in t_files:
     if_verbose(2, '====> Scanning %s' % file)
-    newTestDir(os.path.dirname(file))
+    newTestDir(tempdir, os.path.dirname(file))
     try:
         exec(open(file).read())
     except Exception:
@@ -315,5 +322,12 @@ else:
     if config.summary_file != '':
         summary(t, open(config.summary_file, 'w'))
 
-sys.exit(0)
+if default_testopts.cleanup:
+    shutil.rmtree(tempdir, ignore_errors=True)
+    # Only delete ghc_testdir if it is empty.
+    try:
+        os.rmdir(ghc_testdir)
+    except:
+        pass
 
+sys.exit(0)

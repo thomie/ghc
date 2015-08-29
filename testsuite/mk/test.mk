@@ -188,10 +188,6 @@ else
 RUNTEST_OPTS += -e clean_only=False
 endif
 
-ifneq "$(CHECK_FILES_WRITTEN)" ""
-RUNTEST_OPTS += --check-files-written
-endif
-
 RUNTEST_OPTS +=  \
 	--rootdir=. \
 	--configfile=$(CONFIG) \

@@ -1,6 +1,8 @@
 # -----------------------------------------------------------------------------
 # Utils
 
+import errno
+import os
 import subprocess
 
 def version_to_ints(v):
@@ -36,3 +38,12 @@ def getStdout(cmd_and_args):
     if stderr != '':
         raise Exception("stderr from command: " + str(cmd_and_args))
     return stdout
+
+def mkdirp(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
