@@ -232,10 +232,12 @@ ghciCommands = map mkCmd [
 -- NOTE: in order for us to override the default correctly, any custom entry
 -- must be a SUBSET of word_break_chars.
 word_break_chars :: String
-word_break_chars = let symbols = "!#$%&*+/<=>?@\\^|-~"
-                       specials = "(),;[]`{}"
-                       spaces = " \t\n"
-                   in spaces ++ specials ++ symbols
+word_break_chars = spaces ++ specials ++ symbols
+
+symbols, specials, spaces :: String
+symbols = "!#$%&*+/<=>?@\\^|-~"
+specials = "(),;[]`{}"
+spaces = " \t\n"
 
 flagWordBreakChars :: String
 flagWordBreakChars = " \t\n"
@@ -2814,36 +2816,10 @@ completeMacro = wrapIdentCompleter $ \w -> do
   return (filter (w `isPrefixOf`) (map cmdName cmds))
 
 completeIdentifier line@(left, _) =
-  -- Note: `left` is a reversed string
-  -- Test if trailing sequence of symbols is operator symbol sequence
-  if revOpSpan == ""
-     -- complete normal identifier breaking input on whitespace characters, for
-     -- this purpose `wrapIndentCompleter` is used
-     then wrapIdentCompleter complete line
-     else do
-       -- We should handle an extra case when operator sequence starting with
-       -- `.`.  In this case we have to check if preceding word was a module
-       -- name, e.g.  "Control.", if this is the case we must provide all
-       -- possible identifiers from a given module.
-       let opSpan = reverse revOpSpan
-       (cs, rest) <- case opSpan of
-         '.':_ -> do
-           let (revPrev, rest') = break (`elem` word_break_chars) revRestNonOp
-               prev = reverse revPrev
-           case prev of
-             p:_ -> if isUpper p
-                    then do
-                      cs' <- complete (prev ++ opSpan)
-                      return (cs', rest')
-                    else completeOperator
-             _ -> completeOperator
-         _ -> completeOperator
-       return (rest, map simpleCompletion (nubSort cs))
+  case left of
+     (x:_) | isSymbolChar x -> wrapCompleter (specials ++ spaces) complete line
+     _                      -> wrapIdentCompleter complete line
   where
-    (revOpSpan, revRestNonOp) = span isSymbolChar left
-    completeOperator = do
-      cs <- complete (reverse revOpSpan)
-      return (cs, revRestNonOp)
     complete w = do
       rdrs <- GHC.getRdrNamesInScope
       dflags <- GHC.getSessionDynFlags
