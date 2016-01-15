@@ -111,6 +111,7 @@ import System.IO.Unsafe ( unsafePerformIO )
 import System.Process
 import Text.Printf
 import Text.Read ( readMaybe )
+import Text.Read.Lex (isSymbolChar)
 
 #ifndef mingw32_HOST_OS
 import System.Posix hiding ( getEnv )
@@ -2770,13 +2771,24 @@ completeGhciCommand, completeMacro, completeIdentifier, completeModule,
     completeHomeModuleOrFile, completeExpression
     :: CompletionFunc GHCi
 
+-- | Provide completions for last word in a given string.
+--
+-- Takes a tuple of two strings.  First string is a reversed line to be
+-- completed.  Second string is likely unused, 'completeCmd' always passes an
+-- empty string as second item in tuple.
 ghciCompleteWord :: CompletionFunc GHCi
 ghciCompleteWord line@(left,_) = case firstWord of
+    -- If given string starts with `:` colon, and there is only one following
+    -- word then provide REPL command completions.  If there is more than one
+    -- word complete either filename or builtin ghci commands or macros.
     ':':cmd     | null rest     -> completeGhciCommand line
                 | otherwise     -> do
                         completion <- lookupCompletion cmd
                         completion line
+    -- If given string starts with `import` keyword provide module name
+    -- completions
     "import"    -> completeModule line
+    -- otherwise provide identifier completions
     _           -> completeExpression line
   where
     (firstWord,rest) = break isSpace $ dropWhile isSpace $ reverse left
@@ -2801,10 +2813,41 @@ completeMacro = wrapIdentCompleter $ \w -> do
   cmds <- liftIO $ readIORef macros_ref
   return (filter (w `isPrefixOf`) (map cmdName cmds))
 
-completeIdentifier = wrapIdentCompleter $ \w -> do
-  rdrs <- GHC.getRdrNamesInScope
-  dflags <- GHC.getSessionDynFlags
-  return (filter (w `isPrefixOf`) (map (showPpr dflags) rdrs))
+completeIdentifier line@(left, _) =
+  -- Note: `left` is a reversed string
+  -- Test if trailing sequence of symbols is operator symbol sequence
+  if revOpSpan == ""
+     -- complete normal identifier breaking input on whitespace characters, for
+     -- this purpose `wrapIndentCompleter` is used
+     then wrapIdentCompleter complete line
+     else do
+       -- We should handle an extra case when operator sequence starting with
+       -- `.`.  In this case we have to check if preceding word was a module
+       -- name, e.g.  "Control.", if this is the case we must provide all
+       -- possible identifiers from a given module.
+       let opSpan = reverse revOpSpan
+       (cs, rest) <- case opSpan of
+         '.':_ -> do
+           let (revPrev, rest') = break (`elem` word_break_chars) revRestNonOp
+               prev = reverse revPrev
+           case prev of
+             p:_ -> if isUpper p
+                    then do
+                      cs' <- complete (prev ++ opSpan)
+                      return (cs', rest')
+                    else completeOperator
+             _ -> completeOperator
+         _ -> completeOperator
+       return (rest, map simpleCompletion (nubSort cs))
+  where
+    (revOpSpan, revRestNonOp) = span isSymbolChar left
+    completeOperator = do
+      cs <- complete (reverse revOpSpan)
+      return (cs, revRestNonOp)
+    complete w = do
+      rdrs <- GHC.getRdrNamesInScope
+      dflags <- GHC.getSessionDynFlags
+      return (filter (w `isPrefixOf`) (map (showPpr dflags) rdrs))
 
 completeModule = wrapIdentCompleter $ \w -> do
   dflags <- GHC.getSessionDynFlags
