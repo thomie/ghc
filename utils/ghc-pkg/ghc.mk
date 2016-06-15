@@ -27,7 +27,7 @@ utils/ghc-pkg_PACKAGE = ghc-pkg
 # Note [Why build certain utils twice?]
 #
 # We build certain utils twice: once with stage0, and once with stage1.
-# Examples are ghc-pkg and hsc2hs.
+# Examples are ghc-pkg, hsc2hs and unlit.
 #
 # These tools are needed during the bootstrapping process, so we have to use
 # stage0 to build them at first (stage1 doesn't exist yet). (side note: they're
@@ -37,6 +37,11 @@ utils/ghc-pkg_PACKAGE = ghc-pkg
 # that when DYNAMIC_GHC_PROGRAMS=YES, we want to install copies that are
 # dynamically linked. But the stage0 copies are either statically linked, or
 # linked against libraries on the build machine.
+#
+# Another reason why we can't install the stage0 copies is that they are
+# built to run on the build(=host) platform, but when installing a
+# "cross-compiled stage2 compiler" we need copies that run on the target
+# platform.
 #
 # Therefore we build fresh copies, using the stage1 compiler, and install them
 # when you run 'make install'. They are not used for any other purpose.
