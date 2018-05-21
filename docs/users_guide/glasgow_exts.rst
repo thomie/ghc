@@ -2703,7 +2703,7 @@ For example: ::
 
     data G a b where { G1 { g1::a, g2::c } :: G a [c] }
     upd3 g x = g { g1=x }   -- OK:   upd3 :: G a b -> c -> G c b
-    upd4 g x = g { g2=x }   -- BAD (f2's type mentions c, which is not a simple
+    upd4 g x = g { g2=x }   -- BAD (g2's type mentions c, which is not a simple
                             --      type-variable argument in G1's result type)
 
 Restrictions
@@ -2952,7 +2952,7 @@ type declarations.
          data Bar a :: (* -> *) -> * where ...
 
    The type variables (if given) may be explicitly kinded, so we could
-   also write the header for ``Foo`` like this: ::
+   also write the header for ``Bar`` like this: ::
 
          data Bar a (b :: * -> *) where ...
 
@@ -3008,7 +3008,7 @@ type declarations.
    strictness annotations. A "type" of this form can appear only in a
    constructor signature.)
 
--  Record updates are allowed with GADT-style declarations, only fields
+-  Record updates are allowed with GADT-style declarations, but only for fields
    that have the following property: the type of the field mentions no
    existential type variables.
 
