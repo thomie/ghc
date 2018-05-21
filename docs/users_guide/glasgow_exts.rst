@@ -3153,7 +3153,7 @@ also sets :extension:`GADTSyntax` and :extension:`MonoLocalBinds`.
 
    However, for GADTs there is the following additional constraint:
    every constructor that has a field ``f`` must have the same result
-   type (modulo alpha conversion) Hence, in the above example, we cannot
+   type (modulo alpha conversion). Hence, in the above example, we cannot
    merge the ``num`` and ``arg`` fields above into a single name.
    Although their field types are both ``Term Int``, their selector
    functions actually have different types:
