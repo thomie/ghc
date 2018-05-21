@@ -3163,23 +3163,6 @@ also sets :extension:`GADTSyntax` and :extension:`MonoLocalBinds`.
          num :: Term Int -> Term Int
          arg :: Term Bool -> Term Int
 
--  When pattern-matching against data constructors drawn from a GADT,
-   for example in a ``case`` expression, the following rules apply:
-
-   -  The type of the scrutinee must be rigid.
-
-   -  The type of the entire ``case`` expression must be rigid.
-
-   -  The type of any free variable mentioned in any of the ``case``
-      alternatives must be rigid.
-
-   A type is "rigid" if it is completely known to the compiler at its
-   binding site. The easiest way to ensure that a variable a rigid type
-   is to give it a type signature. For more precise details see `Simple
-   unification-based type inference for
-   GADTs <http://research.microsoft.com/%7Esimonpj/papers/gadt/>`__. The
-   criteria implemented by GHC are given in the Appendix.
-
 .. _record-system-extensions:
 
 Extensions to the record system
